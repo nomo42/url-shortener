@@ -54,7 +54,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//далее пишем в ответ сокращенный url
-	_, err = w.Write([]byte(fmt.Sprintf("http://localhost:8080%v\n", shortURL(buf))))
+	_, err = w.Write([]byte(fmt.Sprintf("http://localhost:8080%v", shortURL(buf))))
 	if err != nil {
 		return
 	}
