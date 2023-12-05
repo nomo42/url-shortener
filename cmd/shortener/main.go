@@ -5,23 +5,34 @@ import (
 	"hash/crc32"
 	"io"
 	"net/http"
-	"slices"
+	"strings"
 )
 
 var URLmap = make(map[string]string)
 
 func main() {
-	http.HandleFunc("/", PostHandler)
+	http.HandleFunc("/", handle)
 	err := http.ListenAndServe("localhost:8080", nil)
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
-	//ShortURL("/api/dev/govno")
+	//shortURL("/api/dev/govno")
 	//fmt.Println("Hello")
 
 }
 
-func ShortURL(URL []byte) string {
+func handle(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		resolveShortcutHandler(w, r)
+	case http.MethodPost:
+		createShortcutHandler(w, r)
+	default:
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+	}
+}
+
+func shortURL(URL []byte) string {
 	key := "/" + fmt.Sprintf("%X", crc32.ChecksumIEEE(URL))
 	if _, ok := URLmap[key]; ok {
 		return key
@@ -30,15 +41,9 @@ func ShortURL(URL []byte) string {
 	return key
 }
 
-func PostHandler(w http.ResponseWriter, r *http.Request) {
-	//если спрашивают уже созданный URL передаем управление GeHandler'у
-	if r.Method == http.MethodGet && slices.Contains(r.Header["Content-Type"], "text/plain") {
-		GetHandler(w, r)
-		return
-	}
-
-	//проверяем метод и наличие в поле Content-Type строки tesxt/plain
-	if r.Method != http.MethodPost || !slices.Contains(r.Header["Content-Type"], "text/plain") {
+func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
+	//проверяем наличие в поле Content-Type строки tesxt/plain
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 		return
 	}
@@ -49,14 +54,14 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//далее пишем в ответ сокращенный url
-	_, err = w.Write([]byte(fmt.Sprintf("http://localhost:8080%v\n", ShortURL(buf))))
+	_, err = w.Write([]byte(fmt.Sprintf("http://localhost:8080%v\n", shortURL(buf))))
 	if err != nil {
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")
 }
 
-func GetHandler(w http.ResponseWriter, r *http.Request) {
+func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	if _, ok := URLmap[r.URL.String()]; !ok {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 		return
