@@ -10,9 +10,6 @@ import (
 
 var URLmap = make(map[string]string)
 
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-const keylenth = 6
-
 func main() {
 	http.HandleFunc("/", PostHandler)
 	err := http.ListenAndServe("localhost:8080", nil)
