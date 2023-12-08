@@ -16,22 +16,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
-	//shortURL("/api/dev/govno")
-	//fmt.Println("Hello")
-
 }
-
-func handle(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		resolveShortcutHandler(w, r)
-	case http.MethodPost:
-		createShortcutHandler(w, r)
-	default:
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-	}
-}
-
 func shortURL(URL []byte) string {
 	key := "/" + fmt.Sprintf("%X", crc32.ChecksumIEEE(URL))
 	if _, ok := URLmap[key]; ok {
@@ -47,6 +32,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 		return
 	}
+	w.Header().Set("Content-Type", "text/plain")
 	//раз прошли проверку заранее пишем статус 201 в хедер
 	w.WriteHeader(http.StatusCreated)
 	buf, err := io.ReadAll(r.Body)
@@ -58,7 +44,6 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	w.Header().Set("Content-Type", "text/plain")
 }
 
 func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,4 +53,15 @@ func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Location", URLmap[r.URL.String()])
 	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func handle(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		resolveShortcutHandler(w, r)
+	case http.MethodPost:
+		createShortcutHandler(w, r)
+	default:
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+	}
 }
