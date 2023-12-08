@@ -141,9 +141,7 @@ func Test_resolveShortcutHandler(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			resolveShortcutHandler(recorder, request)
 			res := recorder.Result()
-			defer func() {
-				_ = res.Body.Close()
-			}()
+			defer res.Body.Close()
 			assert.Equal(t, test.want.code, res.StatusCode)
 			body, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
