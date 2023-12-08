@@ -144,7 +144,9 @@ func Test_resolveShortcutHandler(t *testing.T) {
 			res := recorder.Result()
 
 			assert.Equal(t, test.want.code, res.StatusCode)
-
+			defer func() {
+				_ = res.Body.Close()
+			}()
 			body, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 
