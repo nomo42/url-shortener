@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -83,7 +82,6 @@ func Test_createShortcutHandler(t *testing.T) {
 			assert.Equal(t, test.want.isMap, ok)
 			//проверяем что значение по этому ключу является нужным нужным адресом
 			assert.Equal(t, test.request.body, address)
-			fmt.Println(URLmap)
 			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
 
 		})
