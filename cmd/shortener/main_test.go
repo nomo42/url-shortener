@@ -76,7 +76,7 @@ func Test_createShortcutHandler(t *testing.T) {
 				return
 			}
 			//отрезаем от ответа вида http//localhost:8080/<hash_string> префикс http//localhost:8080 чтобы получить ключ мапы
-			key, _ := strings.CutPrefix(test.want.response, "http://localhost:8080")
+			key, _ := strings.CutPrefix(test.want.response, "http://localhost:8080/")
 			address, ok := URLmap[key]
 			//проверяем наличие элемента в мапе
 			assert.Equal(t, test.want.isMap, ok)
@@ -92,8 +92,8 @@ func Test_resolveShortcutHandler(t *testing.T) {
 	defer func() {
 		clear(URLmap)
 	}()
-	URLmap["/D63CDBB3"] = "https://wikipedia.org"
-	URLmap["/5B1A2675"] = "https://google.com"
+	URLmap["D63CDBB3"] = "https://wikipedia.org"
+	URLmap["5B1A2675"] = "https://google.com"
 	type want struct {
 		code     int
 		body     string
@@ -139,7 +139,8 @@ func Test_resolveShortcutHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(test.request.method, test.request.url, nil)
 			recorder := httptest.NewRecorder()
-			resolveShortcutHandler(recorder, request)
+			//resolveShortcutHandler(recorder, request)
+			newMuxer().ServeHTTP(recorder, request)
 			res := recorder.Result()
 			defer res.Body.Close()
 			assert.Equal(t, test.want.code, res.StatusCode)
