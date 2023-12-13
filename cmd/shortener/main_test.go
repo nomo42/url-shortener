@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/nomo42/url-shortener.git/cmd/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -27,6 +28,8 @@ func Test_createShortcutHandler(t *testing.T) {
 		method      string
 		contentType string
 	}
+
+	config.InitFlags()
 
 	tests := []struct {
 		name    string

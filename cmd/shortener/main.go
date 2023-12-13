@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/nomo42/url-shortener.git/cmd/config"
 	"hash/crc32"
 	"io"
 	"net/http"
@@ -12,7 +13,8 @@ import (
 var URLmap = make(map[string]string)
 
 func main() {
-	err := http.ListenAndServe("localhost:8080", newMuxer())
+	config.InitFlags()
+	err := http.ListenAndServe(config.Config.HostAddr, newMuxer())
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
@@ -42,7 +44,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	//далее пишем в ответ сокращенный url
-	_, err = w.Write([]byte(fmt.Sprintf("http://localhost:8080/%v", shortURL(buf))))
+	_, err = w.Write([]byte(fmt.Sprintf("%s%v", config.Config.ShortcutAddr, shortURL(buf))))
 	if err != nil {
 		return
 	}
