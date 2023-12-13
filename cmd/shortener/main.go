@@ -44,7 +44,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	//далее пишем в ответ сокращенный url
-	_, err = w.Write([]byte(fmt.Sprintf("%s%v", config.Config.ShortcutAddr, shortURL(buf))))
+	_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortURL(buf))))
 	if err != nil {
 		return
 	}
