@@ -2,12 +2,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/nomo42/url-shortener.git/cmd/config"
-	"hash/crc32"
+
 	"io"
-	"net/http"
+
 	"strings"
+
+	"net/http"
+
+	"hash/crc32"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/nomo42/url-shortener.git/cmd/config"
 )
 
 var URLmap = make(map[string]string)
@@ -60,17 +66,6 @@ func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Location", url)
 	w.WriteHeader(http.StatusTemporaryRedirect)
-}
-
-func handle(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		resolveShortcutHandler(w, r)
-	case http.MethodPost:
-		createShortcutHandler(w, r)
-	default:
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-	}
 }
 
 func newMuxer() chi.Router {
