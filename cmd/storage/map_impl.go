@@ -29,6 +29,8 @@ func (m mapStorage) Clear() {
 
 var urlMap mapStorage = make(map[string]string)
 
+// Пока других реализаций хранения URL нету, так что NewStorage возвращает именно мапу. Далее с помощью флагов буду
+// определять какая реализация нужна и NewStorage будет определён в файле interface.go
 func NewStorage() Storage {
 	return urlMap
 }
