@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"io"
 
 	"net/http"
@@ -13,21 +15,24 @@ import (
 
 	"github.com/nomo42/url-shortener.git/cmd/config"
 
+	"github.com/nomo42/url-shortener.git/cmd/storage"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )
 
 func Test_createShortcutHandler(t *testing.T) {
+	TestStorage := storage.NewStorage()
 	//после выполнения теста очищаем мапу с URL'ами
 	defer func() {
-		clear(URLmap)
+		TestStorage.Clear()
 	}()
 	type want struct {
 		code        int
 		response    string
 		contentType string
-		isMap       bool
+		isMap       error
 	}
 
 	type request struct {
@@ -49,7 +54,7 @@ func Test_createShortcutHandler(t *testing.T) {
 				code:        http.StatusCreated,
 				response:    "http://localhost:8080/D63CDBB3",
 				contentType: "text/plain",
-				isMap:       true},
+				isMap:       nil},
 			request: request{body: "https://wikipedia.org", method: http.MethodPost, contentType: "text/plain"},
 		},
 		{
@@ -57,7 +62,7 @@ func Test_createShortcutHandler(t *testing.T) {
 			want: want{code: http.StatusCreated,
 				response:    "http://localhost:8080/5B1A2675",
 				contentType: "text/plain",
-				isMap:       true},
+				isMap:       nil},
 			request: request{body: "https://google.com", method: http.MethodPost, contentType: "text/plain"},
 		},
 		{
@@ -65,7 +70,7 @@ func Test_createShortcutHandler(t *testing.T) {
 			want: want{code: http.StatusBadRequest,
 				response:    "Invalid request method\n",
 				contentType: "",
-				isMap:       false},
+				isMap:       fmt.Errorf("no value")},
 			request: request{body: "https://dontcare.ru", method: http.MethodPost, contentType: "wrong"},
 		},
 	}
@@ -77,21 +82,27 @@ func Test_createShortcutHandler(t *testing.T) {
 
 			createShortcutHandler(recorder, request)
 			res := recorder.Result()
+
 			assert.Equal(t, test.want.code, res.StatusCode)
+
 			defer res.Body.Close()
+
 			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
+
 			assert.Equal(t, test.want.response, string(resBody))
+
 			if res.StatusCode != http.StatusCreated {
 				return
 			}
-			//отрезаем от ответа вида http//localhost:8080/<hash_string> префикс http//localhost:8080 чтобы получить ключ мапы
+			//отрезаем от ответа вида http//localhost:8080/<hash_string> префикс http//localhost:8080/ чтобы получить ключ мапы
 			key, _ := strings.CutPrefix(test.want.response, "http://localhost:8080/")
-			address, ok := URLmap[key]
+			address, ok := TestStorage.ReadValue(key)
 			//проверяем наличие элемента в мапе
 			assert.Equal(t, test.want.isMap, ok)
 			//проверяем что значение по этому ключу является нужным нужным адресом
 			assert.Equal(t, test.request.body, address)
+
 			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
 
 		})
@@ -99,11 +110,13 @@ func Test_createShortcutHandler(t *testing.T) {
 }
 
 func Test_resolveShortcutHandler(t *testing.T) {
+	TestStorage := storage.NewStorage()
+	//после выполнения теста очищаем мапу с URL'ами
 	defer func() {
-		clear(URLmap)
+		TestStorage.Clear()
 	}()
-	URLmap["D63CDBB3"] = "https://wikipedia.org"
-	URLmap["5B1A2675"] = "https://google.com"
+	TestStorage.WriteValue("D63CDBB3", "https://wikipedia.org")
+	TestStorage.WriteValue("5B1A2675", "https://google.com")
 	type want struct {
 		code     int
 		body     string
@@ -148,13 +161,16 @@ func Test_resolveShortcutHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(test.request.method, test.request.url, nil)
+
 			recorder := httptest.NewRecorder()
-			//resolveShortcutHandler(recorder, request)
+
 			newMuxer().ServeHTTP(recorder, request)
 			res := recorder.Result()
 			defer res.Body.Close()
+
 			assert.Equal(t, test.want.code, res.StatusCode)
 			body, err := io.ReadAll(res.Body)
+
 			require.NoError(t, err)
 
 			assert.Equal(t, test.want.body, string(body))

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	"io"
 
 	"strings"
@@ -14,24 +13,31 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/nomo42/url-shortener.git/cmd/config"
+
+	"github.com/nomo42/url-shortener.git/cmd/storage"
+
+	"github.com/nomo42/url-shortener.git/cmd/logger"
 )
 
-var URLmap = make(map[string]string)
+var URLStorage = storage.NewStorage()
 
 func main() {
 	config.InitFlags()
-	err := http.ListenAndServe(config.Config.HostAddr, newMuxer())
+	if err := logger.Initialize(config.Config.LogLevel); err != nil {
+		fmt.Printf("Ошибка %v\n", err)
+	}
+	err := http.ListenAndServe(config.Config.HostAddr, logger.RequestResponseLogger(newMuxer()))
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
 }
 
-func shortURL(URL []byte) string {
+func shortenURL(URL []byte) string {
 	key := fmt.Sprintf("%X", crc32.ChecksumIEEE(URL))
-	if _, ok := URLmap[key]; ok {
+	if ok := URLStorage.ExistenceCheck(key); ok {
 		return key
 	}
-	URLmap[key] = string(URL)
+	URLStorage.WriteValue(key, string(URL))
 	return key
 }
 
@@ -50,7 +56,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	//далее пишем в ответ сокращенный url
-	_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortURL(buf))))
+	_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(buf))))
 	if err != nil {
 		return
 	}
@@ -59,8 +65,8 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 
 func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	hash := chi.URLParam(r, "hash")
-	url, ok := URLmap[hash]
-	if !ok {
+	url, ok := URLStorage.ReadValue(hash)
+	if ok != nil {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 		return
 	}
