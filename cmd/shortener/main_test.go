@@ -24,7 +24,7 @@ import (
 
 func Test_createShortcutHandler(t *testing.T) {
 	TestStorage := storage.NewStorage()
-	//после выполнения теста очищаем мапу с URL'ами
+	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {
 		TestStorage.Clear()
 	}()
@@ -111,7 +111,7 @@ func Test_createShortcutHandler(t *testing.T) {
 
 func Test_resolveShortcutHandler(t *testing.T) {
 	TestStorage := storage.NewStorage()
-	//после выполнения теста очищаем мапу с URL'ами
+	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {
 		TestStorage.Clear()
 	}()
@@ -179,6 +179,92 @@ func Test_resolveShortcutHandler(t *testing.T) {
 				return
 			}
 			assert.Equal(t, test.want.location, res.Header.Get("Location"))
+		})
+	}
+}
+
+func Test_createShortcutJSONHandler(t *testing.T) {
+	TestStorage := storage.NewStorage()
+	//после выполнения теста очищаем сторедж с URL'ами
+	defer func() {
+		TestStorage.Clear()
+	}()
+	type want struct {
+		code        int
+		response    string
+		contentType string
+		isMap       error
+	}
+	type request struct {
+		body        string
+		method      string
+		contentType string
+	}
+
+	tests := []struct {
+		name    string
+		want    want
+		request request
+	}{
+		{
+			name: "wiki test",
+			want: want{
+				code:        http.StatusCreated,
+				response:    "{\"result\":\"http://localhost:8080/D63CDBB3\"}",
+				contentType: "application/json",
+				isMap:       nil},
+			request: request{body: "{\"url\": \"https://wikipedia.org\"}", method: http.MethodPost, contentType: "application/json"},
+		},
+		{
+			name: "google test",
+			want: want{code: http.StatusCreated,
+				response:    "{\"result\":\"http://localhost:8080/5B1A2675\"}",
+				contentType: "application/json",
+				isMap:       nil},
+			request: request{body: "{\"url\": \"https://google.com\"}", method: http.MethodPost, contentType: "application/json"},
+		},
+		{
+			name: "wrong content-type test",
+			want: want{code: http.StatusBadRequest,
+				response:    "Invalid request method\n",
+				contentType: "",
+				isMap:       fmt.Errorf("no value")},
+			request: request{body: "\"url\": \"https://google.com\"", method: http.MethodPost, contentType: "wrong"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(test.request.method, "/api/shorten", strings.NewReader(test.request.body))
+			request.Header.Set("Content-Type", test.request.contentType)
+			recorder := httptest.NewRecorder()
+
+			createShortcutJSONHandler(recorder, request)
+			res := recorder.Result()
+
+			assert.Equal(t, test.want.code, res.StatusCode)
+
+			defer res.Body.Close()
+
+			resBody, err := io.ReadAll(res.Body)
+			require.NoError(t, err)
+
+			assert.Equal(t, test.want.response, string(resBody))
+
+			if res.StatusCode != http.StatusCreated {
+				return
+			}
+			//отрезаем от ответа вида http//localhost:8080/<hash_string> префикс http//localhost:8080/ чтобы получить ключ мапы
+			key, _ := strings.CutPrefix(test.want.response, "{\"result\":\"http://localhost:8080/")
+			key, _ = strings.CutSuffix(key, "\"}")
+			address, err := TestStorage.ReadValue(key)
+			//проверяем наличие элемента в мапе
+			assert.Equal(t, test.want.isMap, err)
+			//проверяем что значение по этому ключу является нужным нужным адресом
+			value, _ := strings.CutPrefix(test.request.body, "{\"url\": \"")
+			value, _ = strings.CutSuffix(value, "\"}")
+			assert.Equal(t, value, address)
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+
 		})
 	}
 }

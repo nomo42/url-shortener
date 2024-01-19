@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -74,9 +75,52 @@ func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
+func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
+	type URL struct {
+		Url string `json:"url"`
+	}
+
+	type shortURL struct {
+		Result string `json:"result"`
+	}
+
+	givenUrl := &URL{}
+	shortUrl := &shortURL{}
+
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+		http.Error(w, "Invalid request method", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	buf, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Fail read request body", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+	if err = json.Unmarshal(buf, givenUrl); err != nil {
+		http.Error(w, "Fail unmarshal json", http.StatusInternalServerError)
+	}
+	byteUrl := []byte(givenUrl.Url)
+	shortUrl.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(byteUrl))
+
+	buf, err = json.Marshal(shortUrl)
+	if err != nil {
+		http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
+	}
+
+	_, err = w.Write(buf)
+	if err != nil {
+		return
+	}
+}
+
 func newMuxer() chi.Router {
 	mux := chi.NewRouter()
 	mux.Get("/{hash}", resolveShortcutHandler)
 	mux.Post("/", createShortcutHandler)
+	mux.Post("/api/shorten", createShortcutJSONHandler)
 	return mux
 }
