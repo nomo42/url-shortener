@@ -77,15 +77,15 @@ func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
 
 func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	type URL struct {
-		Url string `json:"url"`
+		URL string `json:"url"`
 	}
 
-	type shortURL struct {
+	type resultURL struct {
 		Result string `json:"result"`
 	}
 
-	givenUrl := &URL{}
-	shortUrl := &shortURL{}
+	givenURL := &URL{}
+	shortURL := &resultURL{}
 
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
@@ -100,13 +100,13 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	if err = json.Unmarshal(buf, givenUrl); err != nil {
+	if err = json.Unmarshal(buf, givenURL); err != nil {
 		http.Error(w, "Fail unmarshal json", http.StatusInternalServerError)
 	}
-	byteUrl := []byte(givenUrl.Url)
-	shortUrl.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(byteUrl))
+	byteURL := []byte(givenURL.URL)
+	shortURL.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(byteURL))
 
-	buf, err = json.Marshal(shortUrl)
+	buf, err = json.Marshal(shortURL)
 	if err != nil {
 		http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
 	}
