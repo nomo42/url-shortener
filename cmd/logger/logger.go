@@ -28,7 +28,7 @@ func Initialize(level string) error {
 	return nil
 }
 
-func RequestResponseLogger(h http.Handler) http.Handler {
+func LogMware(h http.Handler) http.Handler {
 	LogFunc := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 

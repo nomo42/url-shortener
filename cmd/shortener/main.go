@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nomo42/url-shortener.git/cmd/gz_encode"
 	"io"
 
 	"strings"
@@ -20,14 +21,15 @@ import (
 	"github.com/nomo42/url-shortener.git/cmd/logger"
 )
 
-var URLStorage = storage.NewStorage()
+// Сделать не глобальной эту шляпу
+var urlStorage = storage.NewStorage()
 
 func main() {
 	config.InitFlags()
 	if err := logger.Initialize(config.Config.LogLevel); err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
-	err := http.ListenAndServe(config.Config.HostAddr, logger.RequestResponseLogger(newMuxer()))
+	err := http.ListenAndServe(config.Config.HostAddr, logger.LogMware(gz_encode.GzipMware(newMuxer())))
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
@@ -35,10 +37,10 @@ func main() {
 
 func shortenURL(URL []byte) string {
 	key := fmt.Sprintf("%X", crc32.ChecksumIEEE(URL))
-	if ok := URLStorage.ExistenceCheck(key); ok {
+	if ok := urlStorage.ExistenceCheck(key); ok {
 		return key
 	}
-	URLStorage.WriteValue(key, string(URL))
+	urlStorage.WriteValue(key, string(URL))
 	return key
 }
 
@@ -66,7 +68,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 
 func resolveShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	hash := chi.URLParam(r, "hash")
-	url, ok := URLStorage.ReadValue(hash)
+	url, ok := urlStorage.ReadValue(hash)
 	if ok != nil {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 		return
