@@ -124,7 +124,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
+	logger.Log.Info(string(buf))
 	_, err = w.Write(buf)
 	if err != nil {
 		return

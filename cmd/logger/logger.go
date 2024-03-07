@@ -63,6 +63,7 @@ type (
 	responseData struct {
 		status int
 		size   int
+		body   string
 	}
 	loggingResponseWriter struct {
 		http.ResponseWriter
