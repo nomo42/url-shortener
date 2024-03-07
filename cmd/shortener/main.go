@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nomo42/url-shortener.git/cmd/gz_encode"
+	"github.com/nomo42/url-shortener.git/cmd/gzEncode"
+	"go.uber.org/zap"
 	"io"
 
 	"strings"
@@ -29,7 +30,7 @@ func main() {
 	if err := logger.Initialize(config.Config.LogLevel); err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
-	err := http.ListenAndServe(config.Config.HostAddr, logger.LogMware(gz_encode.GzipMware(newMuxer())))
+	err := http.ListenAndServe(config.Config.HostAddr, logger.LogMware(gzEncode.GzipWriteMware(newMuxer())))
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
@@ -45,6 +46,16 @@ func shortenURL(URL []byte) string {
 }
 
 func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
+	//encode := r.Header.Values("Content-Type")
+	//for _, v := range encode {
+	//	if v == "application/json" {
+	//		buf, _ := io.ReadAll(r.Body)
+	//		logger.Log.Info(fmt.Sprintf("%v", string(buf)))
+	//		_, _ = w.Write(buf)
+	//		return
+	//	}
+	//}
+
 	//проверяем наличие в поле Content-Type строки text/plain
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
@@ -100,9 +111,8 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-
 	if err = json.Unmarshal(buf, givenURL); err != nil {
+		logger.Log.Error("Fail unmarshal json", zap.String("body", string(buf)))
 		http.Error(w, "Fail unmarshal json", http.StatusInternalServerError)
 	}
 	byteURL := []byte(givenURL.URL)
@@ -112,6 +122,8 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
 	}
+
+	w.WriteHeader(http.StatusCreated)
 
 	_, err = w.Write(buf)
 	if err != nil {

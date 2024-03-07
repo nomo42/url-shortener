@@ -1,0 +1,20 @@
+### curl -X POST -d @test.data http://localhost:13
+// @no-log
+// @no-cookie-jar
+#POST http://localhost:8080/api/shorten
+POST http://localhost:8080/
+#Content-Type: application/json
+Content-Type: application/json
+Content-Encoding: gzip
+
+< testJsonGzip.gz
+###
+// @no-log
+// @no-cookie-jar
+#POST http://localhost:8080/api/shorten
+POST http://localhost:8080/
+#Content-Type: application/json
+Content-Type: application/json
+#Content-Encoding: gzip
+
+< testJsonGzip.gz
