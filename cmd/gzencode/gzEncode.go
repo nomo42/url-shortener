@@ -69,11 +69,6 @@ func (rc gzipReadCloser) Close() error {
 func GzipWriteMware(h http.Handler) http.Handler {
 	EncodeFunc := func(w http.ResponseWriter, r *http.Request) {
 		var ok bool
-
-		gzwr := gzipWriter{
-			ResponseWriter: w,
-		}
-
 		for _, v := range r.Header.Values("Accept-Encoding") {
 			if strings.Contains(v, "gzip") {
 				ok = true
@@ -82,6 +77,9 @@ func GzipWriteMware(h http.Handler) http.Handler {
 		}
 
 		if ok {
+			gzwr := gzipWriter{
+				ResponseWriter: w,
+			}
 			gz, err := gzip.NewWriterLevel(w, gzip.BestCompression)
 			if err != nil {
 				_, _ = io.WriteString(w, err.Error())
@@ -96,9 +94,12 @@ func GzipWriteMware(h http.Handler) http.Handler {
 				if cType == "application/json" || cType == "text/html" {
 					gz.Close()
 				}
+
 			}()
+			h.ServeHTTP(gzwr, r)
+			return
 		}
-		h.ServeHTTP(gzwr, r)
+		h.ServeHTTP(w, r)
 
 	}
 	return http.HandlerFunc(EncodeFunc)
