@@ -1,4 +1,4 @@
-package gzEncode
+package gzencode
 
 import (
 	"compress/gzip"
