@@ -3,6 +3,7 @@ module github.com/nomo42/url-shortener.git
 go 1.21.4
 
 require (
+	github.com/Yandex-Practicum/go-autotests v0.10.5
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/stretchr/testify v1.8.4

@@ -1,3 +1,5 @@
+github.com/Yandex-Practicum/go-autotests v0.10.5 h1:8goBRz6D+z6uffK9F+knZwPgxkGNTHPfIqQ9go6Q8Vg=
+github.com/Yandex-Practicum/go-autotests v0.10.5/go.mod h1:BT48yjNyypFZUEUwvBCDMbbAW4kyUbt+VVCek7YuRoQ=
 github.com/caarlos0/env/v6 v6.10.1 h1:t1mPSxNpei6M5yAeu1qtRdPAK29Nbcf/n3G7x+b3/II=
 github.com/caarlos0/env/v6 v6.10.1/go.mod h1:hvp/ryKXKipEkcuYjs9mI4bBCg+UI0Yhgm5Zu0ddvwc=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
