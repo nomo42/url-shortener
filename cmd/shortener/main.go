@@ -57,7 +57,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	//проверяем наличие в поле Content-Type строки text/plain
-	if !strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") {
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") && !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-gzip") {
 		http.Error(w, "Invalid request method"+fmt.Sprintf(": %s", r.Header.Get("Content-Type")), http.StatusBadRequest)
 		return
 	}
@@ -100,7 +100,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	givenURL := &URL{}
 	shortURL := &resultURL{}
 
-	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") && !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-gzip") {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 		return
 	}
