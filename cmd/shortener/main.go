@@ -123,8 +123,13 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
 	}
 	logger.Log.Info(string(buf))
-	_, err = w.Write(buf)
+	for _, v := range r.Header.Values("Accept-Encoding") {
+		if strings.Contains(v, "gzip") {
+			w.Header().Set("Content-Encoding", "gzip")
+		}
+	}
 	w.WriteHeader(http.StatusCreated)
+	_, err = w.Write(buf)
 	if err != nil {
 		return
 	}

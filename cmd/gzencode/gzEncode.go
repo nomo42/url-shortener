@@ -84,9 +84,11 @@ func GzipWriteMware(h http.Handler) http.Handler {
 			if err != nil {
 				_, _ = io.WriteString(w, err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
+
 			}
 			gzwr.Writer = gz
 			gzwr.f = sync.OnceFunc(func() {
+				w.WriteHeader(http.StatusCreated)
 				w.Header().Set("Content-Encoding", "gzip")
 			})
 			defer func() {
