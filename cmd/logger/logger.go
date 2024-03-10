@@ -44,11 +44,15 @@ func LogMware(h http.Handler) http.Handler {
 		h.ServeHTTP(&lw, r)
 
 		duration := time.Since(start)
-
+		var headers string
+		for key, value := range r.Header {
+			headers = headers + fmt.Sprintf("%s: %s ", key, value)
+		}
 		Log.Info("got incoming HTTP request",
 			zap.String("uri", r.RequestURI),
 			zap.String("method", r.Method),
 			zap.Duration("duration", duration),
+			zap.String("headers", headers),
 		)
 
 		Log.Info(fmt.Sprintf("response for %s request", r.RequestURI),

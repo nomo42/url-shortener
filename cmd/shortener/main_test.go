@@ -21,6 +21,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestStuff(t *testing.T) {
+	var ok bool
+	arr := []string{"1", "2", "3"}
+	for _, v := range arr {
+		if strings.Contains(v, "4") {
+			ok = true
+			break
+		}
+	}
+	if ok {
+		t.Log("vse ploho")
+		return
+	}
+	t.Log("vse norm")
+}
+
 func Test_createShortcutHandler(t *testing.T) {
 	TestStorage := storage.NewStorage()
 	//после выполнения теста очищаем сторедж с URL'ами

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nomo42/url-shortener.git/cmd/gzencode"
 	"go.uber.org/zap"
 	"io"
 
@@ -29,7 +30,7 @@ func main() {
 	if err := logger.Initialize(config.Config.LogLevel); err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
-	err := http.ListenAndServe(config.Config.HostAddr, logger.LogMware(newMuxer()))
+	err := http.ListenAndServe(config.Config.HostAddr, logger.LogMware(gzencode.GzipWriteMware(newMuxer())))
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
@@ -136,5 +137,4 @@ func newMuxer() chi.Router {
 	mux.Post("/", createShortcutHandler)
 	mux.Post("/api/shorten", createShortcutJSONHandler)
 	return mux
-	//localhost:8080/api/shorten
 }
