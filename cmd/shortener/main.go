@@ -79,6 +79,10 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		buf, err = io.ReadAll(gzReader)
+		if err != nil {
+			http.Error(w, "Fail read gzipped body", http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(buf))))
 		if err != nil {
@@ -143,6 +147,10 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		buf, err = io.ReadAll(gzReader)
+		if err != nil {
+			http.Error(w, "Fail read gzipped body", http.StatusInternalServerError)
+			return
+		}
 
 		if err = json.Unmarshal(buf, givenURL); err != nil {
 			logger.Log.Error("Fail unmarshal json", zap.String("body", string(buf)))
