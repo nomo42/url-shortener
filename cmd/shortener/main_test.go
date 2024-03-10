@@ -83,7 +83,7 @@ func Test_createShortcutHandler(t *testing.T) {
 		{
 			name: "wrong content-type test",
 			want: want{code: http.StatusBadRequest,
-				response:    "Invalid request method\n",
+				response:    "Invalid request method: wrong\n",
 				contentType: "",
 				isMap:       fmt.Errorf("no value")},
 			request: request{body: "https://dontcare.ru", method: http.MethodPost, contentType: "wrong"},

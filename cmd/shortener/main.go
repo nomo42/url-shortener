@@ -58,7 +58,7 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 
 	//проверяем наличие в поле Content-Type строки text/plain
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") {
-		http.Error(w, "Invalid request method", http.StatusBadRequest)
+		http.Error(w, "Invalid request method"+fmt.Sprintf(": %s", r.Header.Get("Content-Type")), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")

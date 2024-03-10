@@ -53,6 +53,7 @@ func LogMware(h http.Handler) http.Handler {
 			zap.String("method", r.Method),
 			zap.Duration("duration", duration),
 			zap.String("headers", headers),
+			zap.String("Content-Type", r.Header.Get("Content-Type")),
 		)
 
 		Log.Info(fmt.Sprintf("response for %s request", r.RequestURI),

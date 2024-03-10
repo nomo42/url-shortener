@@ -4,8 +4,9 @@
 #POST http://localhost:8080/api/shorten
 POST http://localhost:8080/
 #Content-Type: application/json
-Content-Type: application/json
+#Content-Type: text/plain
 Content-Encoding: gzip
+Accept-Encoding: gzip
 
 < testJsonGzip.gz
 ###
