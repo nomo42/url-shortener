@@ -122,10 +122,9 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
 	}
-
-	w.WriteHeader(http.StatusCreated)
 	logger.Log.Info(string(buf))
 	_, err = w.Write(buf)
+	w.WriteHeader(http.StatusCreated)
 	if err != nil {
 		return
 	}
