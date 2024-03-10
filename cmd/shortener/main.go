@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/nomo42/url-shortener.git/cmd/gzencode"
@@ -41,6 +42,7 @@ func shortenURL(URL []byte) string {
 	if ok := urlStorage.ExistenceCheck(key); ok {
 		return key
 	}
+	logger.Log.Info(string(URL))
 	urlStorage.WriteValue(key, string(URL))
 	return key
 }
@@ -62,12 +64,34 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")
-	//раз прошли проверку заранее пишем статус 201 в хедер
+	var ok bool
+	var buf []byte
+	for _, v := range r.Header.Values("Content-Encoding") {
+		if strings.Contains(v, "gzip") {
+			ok = true
+			break
+		}
+	}
+	if ok {
+		gzReader, err := gzip.NewReader(r.Body)
+		if err != nil {
+			http.Error(w, "Fail read gzipped body", http.StatusInternalServerError)
+			return
+		}
+		buf, err = io.ReadAll(gzReader)
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(buf))))
+		if err != nil {
+			return
+		}
+		return
+	}
 	buf, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Fail read request body", http.StatusInternalServerError)
 		return
 	}
+	//раз прошли проверку заранее пишем статус 201 в хедер
 	w.WriteHeader(http.StatusCreated)
 	//далее пишем в ответ сокращенный url
 	_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(buf))))
@@ -104,6 +128,47 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request method", http.StatusBadRequest)
 		return
 	}
+	var ok bool
+	var buf []byte
+	for _, v := range r.Header.Values("Content-Encoding") {
+		if strings.Contains(v, "gzip") {
+			ok = true
+			break
+		}
+	}
+	if ok {
+		gzReader, err := gzip.NewReader(r.Body)
+		if err != nil {
+			http.Error(w, "Fail read gzipped body", http.StatusInternalServerError)
+			return
+		}
+		buf, err = io.ReadAll(gzReader)
+
+		if err = json.Unmarshal(buf, givenURL); err != nil {
+			logger.Log.Error("Fail unmarshal json", zap.String("body", string(buf)))
+			http.Error(w, "Fail unmarshal json", http.StatusInternalServerError)
+		}
+		byteURL := []byte(givenURL.URL)
+		shortURL.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(byteURL))
+
+		buf, err = json.Marshal(shortURL)
+		if err != nil {
+			http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
+		}
+		logger.Log.Info(string(buf))
+		for _, v := range r.Header.Values("Accept-Encoding") {
+			if strings.Contains(v, "gzip") {
+				w.Header().Set("Content-Encoding", "gzip")
+			}
+		}
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write(buf)
+		if err != nil {
+			return
+		}
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	buf, err := io.ReadAll(r.Body)
 	if err != nil {
