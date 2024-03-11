@@ -29,12 +29,12 @@ func TestS(t *testing.T) {
 //	//f, err := os.OpenFile(config.Config.JsonDb, os.O_APPEND|os.O_RDWR, 0666)
 //	//require.NoError(t, err, "must open file")
 //	//var r1, r2 storage.Result
-//	//r1.Uuid = 1
-//	//r1.ShortUrl = "EAC67D10"
-//	//r1.OriginalUrl = "kolivan.org"
-//	//r2.Uuid = 2
-//	//r2.ShortUrl = "EBCF7D12"
-//	//r2.OriginalUrl = "govno.com"
+//	//r1.UUID = 1
+//	//r1.ShortURL = "EAC67D10"
+//	//r1.OriginalURL = "kolivan.org"
+//	//r2.UUID = 2
+//	//r2.ShortURL = "EBCF7D12"
+//	//r2.OriginalURL = "govno.com"
 //	//p, err := json.Marshal(r1)
 //	//require.NoError(t, err, "must marshal")
 //	//_, err = f.Write(p)

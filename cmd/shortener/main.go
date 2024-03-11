@@ -27,7 +27,7 @@ var urlStorage = storage.NewStorage()
 
 func main() {
 	config.InitFlags()
-	err := storage.InitJsonDb(urlStorage)
+	err := storage.InitJSONDB(urlStorage)
 	if err != nil {
 		logger.Log.Warn("fail to record urls into file")
 	}

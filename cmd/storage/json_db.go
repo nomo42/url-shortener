@@ -9,14 +9,14 @@ import (
 )
 
 type Result struct {
-	Uuid        int    `json:"uuid"`
-	ShortUrl    string `json:"short_url"`
-	OriginalUrl string `json:"original_url"`
+	UUID        int    `json:"uuid"`
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
 }
 
 var urlCounter int
 
-func InitJsonDb(store Storage) error {
+func InitJSONDB(store Storage) error {
 	if config.Config.JsonDb == "" {
 		return nil
 	}
@@ -34,16 +34,16 @@ func InitJsonDb(store Storage) error {
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			url := scanner.Bytes()
-			var resultingUrlObj Result
-			err = json.Unmarshal(url, &resultingUrlObj)
+			var resultingURLObj Result
+			err = json.Unmarshal(url, &resultingURLObj)
 			if err != nil {
 				return fmt.Errorf("fail to unmarshal url json: %s", err.Error())
 			}
 			//is this a necessary? maybe delete
-			if urlCounter < resultingUrlObj.Uuid {
-				urlCounter = resultingUrlObj.Uuid
+			if urlCounter < resultingURLObj.UUID {
+				urlCounter = resultingURLObj.UUID
 			}
-			store.WriteValue(resultingUrlObj.ShortUrl, resultingUrlObj.OriginalUrl)
+			store.WriteValue(resultingURLObj.ShortURL, resultingURLObj.OriginalURL)
 
 			//parse results and init urlCounter
 		}
@@ -57,17 +57,20 @@ func InitJsonDb(store Storage) error {
 	return nil
 }
 
-func CreateRecord(hash string, originalUrl string) error {
+func CreateRecord(hash string, originalURL string) error {
 	urlRecords, err := os.OpenFile(config.Config.JsonDb, os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return fmt.Errorf("fail to open file: %s", err.Error())
+	}
 	defer func() {
 		_ = urlRecords.Close()
 	}()
 	urlCounter++
 	var result Result
 
-	result.Uuid = urlCounter
-	result.OriginalUrl = originalUrl
-	result.ShortUrl = hash
+	result.UUID = urlCounter
+	result.OriginalURL = originalURL
+	result.ShortURL = hash
 	record, err := json.Marshal(result)
 	if err != nil {
 		return err
