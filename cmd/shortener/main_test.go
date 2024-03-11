@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 	"io"
-
 	"net/http"
-
 	"net/http/httptest"
-
+	"os"
 	"strings"
 
 	"testing"
@@ -21,21 +19,46 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStuff(t *testing.T) {
-	var ok bool
-	arr := []string{"1", "2", "3"}
-	for _, v := range arr {
-		if strings.Contains(v, "4") {
-			ok = true
-			break
-		}
-	}
-	if ok {
-		t.Log("vse ploho")
-		return
-	}
-	t.Log("vse norm")
+func TestS(t *testing.T) {
+	t.Log(os.TempDir())
+
 }
+
+//func TestStuff(t *testing.T) {
+//	//config.InitFlags()
+//	//f, err := os.OpenFile(config.Config.JsonDb, os.O_APPEND|os.O_RDWR, 0666)
+//	//require.NoError(t, err, "must open file")
+//	//var r1, r2 storage.Result
+//	//r1.Uuid = 1
+//	//r1.ShortUrl = "EAC67D10"
+//	//r1.OriginalUrl = "kolivan.org"
+//	//r2.Uuid = 2
+//	//r2.ShortUrl = "EBCF7D12"
+//	//r2.OriginalUrl = "govno.com"
+//	//p, err := json.Marshal(r1)
+//	//require.NoError(t, err, "must marshal")
+//	//_, err = f.Write(p)
+//	//_, err = f.Write([]byte("\n"))
+//	//require.NoError(t, err, "must write file")
+//	//p, err = json.Marshal(r2)
+//	//require.NoError(t, err, "must marshal")
+//	//_, err = f.Write(p)
+//	//require.NoError(t, err, "must write file")
+//	f, err := os.Open(config.Config.JsonDb)
+//	require.NoError(t, err, "must open file")
+//	scanner := bufio.NewScanner(f)
+//	for scanner.Scan() {
+//		url := scanner.Bytes()
+//		logger.Log.Info(fmt.Sprintf("%s", url))
+//		//require.NoError(t, err, fmt.Sprintf("must marshal: %s", url))
+//		//require.JSONEq(t, `{"uuid":1,"short_url":"EAC67D10","original_url":"kolivan.org"}`, string(bytesUrl))
+//		var resultingUrlObj storage.Result
+//		err := json.Unmarshal(url, &resultingUrlObj)
+//		require.NoErrorf(t, err, "must unmarshal")
+//		t.Log(resultingUrlObj)
+//	}
+//
+//}
 
 func Test_createShortcutHandler(t *testing.T) {
 	TestStorage := storage.NewStorage()
