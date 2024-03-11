@@ -17,14 +17,14 @@ type Result struct {
 var urlCounter int
 
 func InitJSONDB(store Storage) error {
-	if config.Config.JsonDb == "" {
+	if config.Config.JSONDB == "" {
 		return nil
 	}
 
-	records, err := os.OpenFile(config.Config.JsonDb, os.O_CREATE|os.O_EXCL|os.O_RDWR|os.O_APPEND, 0666)
+	records, err := os.OpenFile(config.Config.JSONDB, os.O_CREATE|os.O_EXCL|os.O_RDWR|os.O_APPEND, 0666)
 	if err != nil {
 
-		file, err := os.Open(config.Config.JsonDb)
+		file, err := os.Open(config.Config.JSONDB)
 		if err != nil {
 			return fmt.Errorf("fail read urlRecords: %s", err.Error())
 		}
@@ -58,7 +58,7 @@ func InitJSONDB(store Storage) error {
 }
 
 func CreateRecord(hash string, originalURL string) error {
-	urlRecords, err := os.OpenFile(config.Config.JsonDb, os.O_WRONLY|os.O_APPEND, 0666)
+	urlRecords, err := os.OpenFile(config.Config.JSONDB, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return fmt.Errorf("fail to open file: %s", err.Error())
 	}

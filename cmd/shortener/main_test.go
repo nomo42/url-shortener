@@ -26,7 +26,7 @@ func TestS(t *testing.T) {
 
 //func TestStuff(t *testing.T) {
 //	//config.InitFlags()
-//	//f, err := os.OpenFile(config.Config.JsonDb, os.O_APPEND|os.O_RDWR, 0666)
+//	//f, err := os.OpenFile(config.Config.JSONDB, os.O_APPEND|os.O_RDWR, 0666)
 //	//require.NoError(t, err, "must open file")
 //	//var r1, r2 storage.Result
 //	//r1.UUID = 1
@@ -44,7 +44,7 @@ func TestS(t *testing.T) {
 //	//require.NoError(t, err, "must marshal")
 //	//_, err = f.Write(p)
 //	//require.NoError(t, err, "must write file")
-//	f, err := os.Open(config.Config.JsonDb)
+//	f, err := os.Open(config.Config.JSONDB)
 //	require.NoError(t, err, "must open file")
 //	scanner := bufio.NewScanner(f)
 //	for scanner.Scan() {
