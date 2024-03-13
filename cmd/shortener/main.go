@@ -49,7 +49,7 @@ func shortenURL(URL []byte) string {
 	logger.Log.Info(string(URL))
 	urlStorage.WriteValue(key, string(URL))
 	err := storage.CreateRecord(key, string(URL))
-	if err != nil {
+	if err != nil && config.Config.JSONDB != "" {
 		logger.Log.Warn(fmt.Sprintf("fail to record hash:%s, url:%s. Error: %s", key, string(URL), err.Error()))
 	}
 	return key
@@ -203,6 +203,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
 	}
+
 	logger.Log.Info(string(buf))
 	for _, v := range r.Header.Values("Accept-Encoding") {
 		if strings.Contains(v, "gzip") {

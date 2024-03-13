@@ -39,13 +39,11 @@ func InitJSONDB(store Storage) error {
 			if err != nil {
 				return fmt.Errorf("fail to unmarshal url json: %s", err.Error())
 			}
-			//is this a necessary? maybe delete
 			if urlCounter < resultingURLObj.UUID {
 				urlCounter = resultingURLObj.UUID
 			}
 			store.WriteValue(resultingURLObj.ShortURL, resultingURLObj.OriginalURL)
 
-			//parse results and init urlCounter
 		}
 		if err != nil {
 			return fmt.Errorf("fail to parse json: %s", err.Error())
@@ -58,6 +56,9 @@ func InitJSONDB(store Storage) error {
 }
 
 func CreateRecord(hash string, originalURL string) error {
+	if config.Config.JSONDB == "" {
+		return fmt.Errorf("no file")
+	}
 	urlRecords, err := os.OpenFile(config.Config.JSONDB, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return fmt.Errorf("fail to open file: %s", err.Error())
