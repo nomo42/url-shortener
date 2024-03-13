@@ -4,9 +4,22 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/nomo42/url-shortener.git/cmd/config"
 	"os"
+	"sync"
+
+	"github.com/nomo42/url-shortener.git/cmd/config"
+
+	"github.com/nomo42/url-shortener.git/cmd/interfaces"
+
+	"github.com/nomo42/url-shortener.git/cmd/logger"
 )
+
+type FileStorage struct {
+	file *os.File
+}
+
+var fileStore *FileStorage
+var fMu sync.Mutex
 
 type Result struct {
 	UUID        int    `json:"uuid"`
@@ -16,28 +29,33 @@ type Result struct {
 
 var urlCounter int
 
-func InitJSONDB(store Storage) error {
+func GetFileStorage(store interfaces.Storage) interfaces.FileStorage {
+	fMu.Lock()
+	defer fMu.Unlock()
+	if fileStore != nil {
+		return fileStore
+	}
+
 	if config.Config.JSONDB == "" {
-		return nil
+		return &FileStorage{file: nil}
 	}
 
 	records, err := os.OpenFile(config.Config.JSONDB, os.O_CREATE|os.O_EXCL|os.O_RDWR|os.O_APPEND, 0666)
 	if err != nil {
 
 		file, err := os.Open(config.Config.JSONDB)
+		file, err = os.OpenFile(config.Config.JSONDB, os.O_RDWR|os.O_APPEND, 0666)
 		if err != nil {
-			return fmt.Errorf("fail read urlRecords: %s", err.Error())
+			logger.Log.Warn(fmt.Sprintf("fail read urlRecords: %s", err.Error()))
+			return &FileStorage{file: nil}
 		}
-		defer func() {
-			_ = file.Close()
-		}()
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			url := scanner.Bytes()
 			var resultingURLObj Result
 			err = json.Unmarshal(url, &resultingURLObj)
 			if err != nil {
-				return fmt.Errorf("fail to unmarshal url json: %s", err.Error())
+				logger.Log.Warn(fmt.Sprintf("fail to unmarshal url json: %s", err.Error()))
 			}
 			if urlCounter < resultingURLObj.UUID {
 				urlCounter = resultingURLObj.UUID
@@ -45,27 +63,19 @@ func InitJSONDB(store Storage) error {
 			store.WriteValue(resultingURLObj.ShortURL, resultingURLObj.OriginalURL)
 
 		}
-		if err != nil {
-			return fmt.Errorf("fail to parse json: %s", err.Error())
-		}
+		records = file
 	}
-	defer func() {
-		_ = records.Close()
-	}()
-	return nil
+	var file FileStorage
+	file.file = records
+	fileStore = &file
+	return fileStore
 }
 
-func CreateRecord(hash string, originalURL string) error {
+func (f *FileStorage) CreateRecord(hash string, originalURL string) error {
 	if config.Config.JSONDB == "" {
 		return fmt.Errorf("no file")
 	}
-	urlRecords, err := os.OpenFile(config.Config.JSONDB, os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		return fmt.Errorf("fail to open file: %s", err.Error())
-	}
-	defer func() {
-		_ = urlRecords.Close()
-	}()
+
 	urlCounter++
 	var result Result
 
@@ -78,22 +88,26 @@ func CreateRecord(hash string, originalURL string) error {
 	}
 
 	if urlCounter == 1 {
-		_, err := urlRecords.Write(record)
+		_, err := f.file.Write(record)
 		if err != nil {
 			return fmt.Errorf("fail to write new record: %s", err.Error())
 		}
 		return nil
 	}
 
-	_, err = urlRecords.Write([]byte("\n"))
+	_, err = f.file.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
 
-	_, err = urlRecords.Write(record)
+	_, err = f.file.Write(record)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (f *FileStorage) Close() error {
+	return f.file.Close()
 }

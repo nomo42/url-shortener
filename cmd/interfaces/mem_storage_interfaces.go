@@ -1,4 +1,4 @@
-package storage
+package interfaces
 
 type Storage interface {
 	WriteValue(key, value string)

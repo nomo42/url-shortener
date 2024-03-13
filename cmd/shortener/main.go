@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/nomo42/url-shortener.git/cmd/gzencode"
 	"go.uber.org/zap"
 	"io"
 	"strings"
@@ -14,6 +13,8 @@ import (
 	"hash/crc32"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/nomo42/url-shortener.git/cmd/gzencode"
 
 	"github.com/nomo42/url-shortener.git/cmd/config"
 
@@ -27,15 +28,12 @@ var urlStorage = storage.NewStorage()
 
 func main() {
 	config.InitFlags()
-	err := storage.InitJSONDB(urlStorage)
-	if err != nil {
-		logger.Log.Warn("fail to record urls into file")
-	}
-
+	fileStore := storage.GetFileStorage(urlStorage)
+	defer fileStore.Close()
 	if err := logger.Initialize(config.Config.LogLevel); err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
-	err = http.ListenAndServe(config.Config.HostAddr, logger.LogMware(gzencode.GzipWriteMware(newMuxer())))
+	err := http.ListenAndServe(config.Config.HostAddr, logger.LogMware(gzencode.GzipWriteMware(newMuxer())))
 	if err != nil {
 		fmt.Printf("Ошибка %v\n", err)
 	}
@@ -48,7 +46,8 @@ func shortenURL(URL []byte) string {
 	}
 	logger.Log.Info(string(URL))
 	urlStorage.WriteValue(key, string(URL))
-	err := storage.CreateRecord(key, string(URL))
+	fileStore := storage.GetFileStorage(urlStorage)
+	err := fileStore.CreateRecord(key, string(URL))
 	if err != nil && config.Config.JSONDB != "" {
 		logger.Log.Warn(fmt.Sprintf("fail to record hash:%s, url:%s. Error: %s", key, string(URL), err.Error()))
 	}
@@ -170,6 +169,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 		buf, err = json.Marshal(shortURL)
 		if err != nil {
 			http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
+			return
 		}
 		logger.Log.Info(string(buf))
 		for _, v := range r.Header.Values("Accept-Encoding") {
@@ -180,6 +180,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write(buf)
 		if err != nil {
+			logger.Log.Error("fail to write response")
 			return
 		}
 		return
@@ -195,6 +196,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	if err = json.Unmarshal(buf, givenURL); err != nil {
 		logger.Log.Error("Fail unmarshal json", zap.String("body", string(buf)))
 		http.Error(w, "Fail unmarshal json", http.StatusInternalServerError)
+		return
 	}
 	byteURL := []byte(givenURL.URL)
 	shortURL.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, shortenURL(byteURL))
@@ -202,6 +204,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	buf, err = json.Marshal(shortURL)
 	if err != nil {
 		http.Error(w, "Fail marshaling result", http.StatusInternalServerError)
+		return
 	}
 
 	logger.Log.Info(string(buf))
@@ -213,6 +216,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(buf)
 	if err != nil {
+		logger.Log.Error("fail to write response")
 		return
 	}
 }
