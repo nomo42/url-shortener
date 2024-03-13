@@ -1,7 +1,7 @@
-package main
+package api
 
 import (
-	"fmt"
+	"github.com/nomo42/url-shortener.git/cmd/config"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,25 +10,18 @@ import (
 
 	"testing"
 
-	"github.com/nomo42/url-shortener.git/cmd/config"
-
-	"github.com/nomo42/url-shortener.git/cmd/storage"
+	"github.com/nomo42/url-shortener.git/cmd/file_storage"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestS(t *testing.T) {
-	t.Log(os.TempDir())
-
-}
-
 //func TestStuff(t *testing.T) {
 //	//config.InitFlags()
 //	//f, err := os.OpenFile(config.Config.JSONDB, os.O_APPEND|os.O_RDWR, 0666)
 //	//require.NoError(t, err, "must open file")
-//	//var r1, r2 storage.Result
+//	//var r1, r2 file_storage.Result
 //	//r1.UUID = 1
 //	//r1.ShortURL = "EAC67D10"
 //	//r1.OriginalURL = "kolivan.org"
@@ -52,7 +45,7 @@ func TestS(t *testing.T) {
 //		logger.Log.Info(fmt.Sprintf("%s", url))
 //		//require.NoError(t, err, fmt.Sprintf("must marshal: %s", url))
 //		//require.JSONEq(t, `{"uuid":1,"short_url":"EAC67D10","original_url":"kolivan.org"}`, string(bytesUrl))
-//		var resultingUrlObj storage.Result
+//		var resultingUrlObj file_storage.Result
 //		err := json.Unmarshal(url, &resultingUrlObj)
 //		require.NoErrorf(t, err, "must unmarshal")
 //		t.Log(resultingUrlObj)
@@ -61,16 +54,20 @@ func TestS(t *testing.T) {
 //}
 
 func Test_createShortcutHandler(t *testing.T) {
-	TestStorage := storage.NewStorage()
+
+	config.InitFlags()
+	storage = file_storage.Get("/tmp/test-storage.json")
+
 	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {
-		TestStorage.Clear()
+		storage.Close()
+		os.Remove("/tmp/test-storage.json")
 	}()
 	type want struct {
 		code        int
 		response    string
 		contentType string
-		isMap       error
+		isMap       bool
 	}
 
 	type request struct {
@@ -78,8 +75,6 @@ func Test_createShortcutHandler(t *testing.T) {
 		method      string
 		contentType string
 	}
-
-	config.InitFlags()
 
 	tests := []struct {
 		name    string
@@ -92,7 +87,7 @@ func Test_createShortcutHandler(t *testing.T) {
 				code:        http.StatusCreated,
 				response:    "http://localhost:8080/D63CDBB3",
 				contentType: "text/plain",
-				isMap:       nil},
+				isMap:       true},
 			request: request{body: "https://wikipedia.org", method: http.MethodPost, contentType: "text/plain"},
 		},
 		{
@@ -100,7 +95,7 @@ func Test_createShortcutHandler(t *testing.T) {
 			want: want{code: http.StatusCreated,
 				response:    "http://localhost:8080/5B1A2675",
 				contentType: "text/plain",
-				isMap:       nil},
+				isMap:       true},
 			request: request{body: "https://google.com", method: http.MethodPost, contentType: "text/plain"},
 		},
 		{
@@ -108,7 +103,7 @@ func Test_createShortcutHandler(t *testing.T) {
 			want: want{code: http.StatusBadRequest,
 				response:    "Invalid request method: wrong\n",
 				contentType: "",
-				isMap:       fmt.Errorf("no value")},
+				isMap:       false},
 			request: request{body: "https://dontcare.ru", method: http.MethodPost, contentType: "wrong"},
 		},
 	}
@@ -135,7 +130,7 @@ func Test_createShortcutHandler(t *testing.T) {
 			}
 			//отрезаем от ответа вида http//localhost:8080/<hash_string> префикс http//localhost:8080/ чтобы получить ключ мапы
 			key, _ := strings.CutPrefix(test.want.response, "http://localhost:8080/")
-			address, ok := TestStorage.ReadValue(key)
+			address, ok := storage.ReadValue(key)
 			//проверяем наличие элемента в мапе
 			assert.Equal(t, test.want.isMap, ok)
 			//проверяем что значение по этому ключу является нужным нужным адресом
@@ -148,13 +143,16 @@ func Test_createShortcutHandler(t *testing.T) {
 }
 
 func Test_resolveShortcutHandler(t *testing.T) {
-	TestStorage := storage.NewStorage()
+	storage = file_storage.Get("/tmp/test-storage.json")
+
 	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {
-		TestStorage.Clear()
+		storage.Close()
+		os.Remove("/tmp/test-storage.json")
 	}()
-	TestStorage.WriteValue("D63CDBB3", "https://wikipedia.org")
-	TestStorage.WriteValue("5B1A2675", "https://google.com")
+
+	storage.WriteValue("D63CDBB3", "https://wikipedia.org")
+	storage.WriteValue("5B1A2675", "https://google.com")
 	type want struct {
 		code     int
 		body     string
@@ -222,16 +220,18 @@ func Test_resolveShortcutHandler(t *testing.T) {
 }
 
 func Test_createShortcutJSONHandler(t *testing.T) {
-	TestStorage := storage.NewStorage()
+	storage = file_storage.Get("/tmp/test-storage.json")
+
 	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {
-		TestStorage.Clear()
+		storage.Close()
+		os.Remove("/tmp/test-storage.json")
 	}()
 	type want struct {
 		code        int
 		response    string
 		contentType string
-		isMap       error
+		isMap       bool
 	}
 	type request struct {
 		body        string
@@ -250,7 +250,7 @@ func Test_createShortcutJSONHandler(t *testing.T) {
 				code:        http.StatusCreated,
 				response:    "{\"result\":\"http://localhost:8080/D63CDBB3\"}",
 				contentType: "application/json",
-				isMap:       nil},
+				isMap:       true},
 			request: request{body: "{\"url\": \"https://wikipedia.org\"}", method: http.MethodPost, contentType: "application/json"},
 		},
 		{
@@ -258,7 +258,7 @@ func Test_createShortcutJSONHandler(t *testing.T) {
 			want: want{code: http.StatusCreated,
 				response:    "{\"result\":\"http://localhost:8080/5B1A2675\"}",
 				contentType: "application/json",
-				isMap:       nil},
+				isMap:       true},
 			request: request{body: "{\"url\": \"https://google.com\"}", method: http.MethodPost, contentType: "application/json"},
 		},
 		{
@@ -266,7 +266,7 @@ func Test_createShortcutJSONHandler(t *testing.T) {
 			want: want{code: http.StatusBadRequest,
 				response:    "Invalid request method\n",
 				contentType: "",
-				isMap:       fmt.Errorf("no value")},
+				isMap:       false},
 			request: request{body: "\"url\": \"https://google.com\"", method: http.MethodPost, contentType: "wrong"},
 		},
 	}
@@ -294,9 +294,9 @@ func Test_createShortcutJSONHandler(t *testing.T) {
 			//отрезаем от ответа вида http//localhost:8080/<hash_string> префикс http//localhost:8080/ чтобы получить ключ мапы
 			key, _ := strings.CutPrefix(test.want.response, "{\"result\":\"http://localhost:8080/")
 			key, _ = strings.CutSuffix(key, "\"}")
-			address, err := TestStorage.ReadValue(key)
+			address, ok := storage.ReadValue(key)
 			//проверяем наличие элемента в мапе
-			assert.Equal(t, test.want.isMap, err)
+			assert.Equal(t, test.want.isMap, ok)
 			//проверяем что значение по этому ключу является нужным нужным адресом
 			value, _ := strings.CutPrefix(test.request.body, "{\"url\": \"")
 			value, _ = strings.CutSuffix(value, "\"}")
