@@ -43,8 +43,7 @@ func GetFileStorage(store interfaces.Storage) interfaces.FileStorage {
 	records, err := os.OpenFile(config.Config.JSONDB, os.O_CREATE|os.O_EXCL|os.O_RDWR|os.O_APPEND, 0666)
 	if err != nil {
 
-		file, err := os.Open(config.Config.JSONDB)
-		file, err = os.OpenFile(config.Config.JSONDB, os.O_RDWR|os.O_APPEND, 0666)
+		file, err := os.OpenFile(config.Config.JSONDB, os.O_RDWR|os.O_APPEND, 0666)
 		if err != nil {
 			logger.Log.Warn(fmt.Sprintf("fail read urlRecords: %s", err.Error()))
 			return &FileStorage{file: nil}
