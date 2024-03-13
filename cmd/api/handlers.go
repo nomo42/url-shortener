@@ -128,7 +128,8 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Fail unmarshal json", http.StatusInternalServerError)
 		}
 		byteURL := []byte(givenURL.URL)
-		shortURL.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, cmd.ShortenURL(byteURL))
+		urlHash := cmd.ShortenURL(byteURL)
+		shortURL.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, urlHash)
 
 		buf, err = json.Marshal(shortURL)
 		if err != nil {
@@ -147,6 +148,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Log.Error("fail to write response")
 			return
 		}
+		storage.WriteValue(urlHash, givenURL.URL)
 		return
 	}
 
