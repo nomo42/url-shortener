@@ -112,6 +112,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if ok {
+		logger.Log.Info("starts gzip decoding")
 		gzReader, err := gzip.NewReader(r.Body)
 		if err != nil {
 			http.Error(w, "Fail read gzipped body", http.StatusInternalServerError)
@@ -129,7 +130,7 @@ func createShortcutJSONHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		byteURL := []byte(givenURL.URL)
 		urlHash := cmd.ShortenURL(byteURL)
-		shortURL.Result = fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, urlHash)
+		shortURL.Result = fmt.Sprintf("%s/%s", config.Config.ShortcutAddr, urlHash)
 
 		buf, err = json.Marshal(shortURL)
 		if err != nil {
