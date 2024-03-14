@@ -10,7 +10,7 @@ import (
 
 	"testing"
 
-	"github.com/nomo42/url-shortener.git/cmd/file_storage"
+	"github.com/nomo42/url-shortener.git/cmd/fileStorage"
 
 	"github.com/stretchr/testify/assert"
 
@@ -21,7 +21,7 @@ import (
 //	//config.InitFlags()
 //	//f, err := os.OpenFile(config.Config.JSONDB, os.O_APPEND|os.O_RDWR, 0666)
 //	//require.NoError(t, err, "must open file")
-//	//var r1, r2 file_storage.Result
+//	//var r1, r2 fileStorage.Result
 //	//r1.UUID = 1
 //	//r1.ShortURL = "EAC67D10"
 //	//r1.OriginalURL = "kolivan.org"
@@ -45,7 +45,7 @@ import (
 //		logger.Log.Info(fmt.Sprintf("%s", url))
 //		//require.NoError(t, err, fmt.Sprintf("must marshal: %s", url))
 //		//require.JSONEq(t, `{"uuid":1,"short_url":"EAC67D10","original_url":"kolivan.org"}`, string(bytesUrl))
-//		var resultingUrlObj file_storage.Result
+//		var resultingUrlObj fileStorage.Result
 //		err := json.Unmarshal(url, &resultingUrlObj)
 //		require.NoErrorf(t, err, "must unmarshal")
 //		t.Log(resultingUrlObj)
@@ -56,7 +56,7 @@ import (
 func Test_createShortcutHandler(t *testing.T) {
 
 	config.InitFlags()
-	storage = file_storage.Get("/tmp/test-storage.json")
+	storage = fileStorage.Get("/tmp/test-storage.json")
 
 	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {
@@ -143,7 +143,7 @@ func Test_createShortcutHandler(t *testing.T) {
 }
 
 func Test_resolveShortcutHandler(t *testing.T) {
-	storage = file_storage.Get("/tmp/test-storage.json")
+	storage = fileStorage.Get("/tmp/test-storage.json")
 
 	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {
@@ -220,7 +220,7 @@ func Test_resolveShortcutHandler(t *testing.T) {
 }
 
 func Test_createShortcutJSONHandler(t *testing.T) {
-	storage = file_storage.Get("/tmp/test-storage.json")
+	storage = fileStorage.Get("/tmp/test-storage.json")
 
 	//после выполнения теста очищаем сторедж с URL'ами
 	defer func() {

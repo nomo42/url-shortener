@@ -1,4 +1,4 @@
-package file_storage
+package fileStorage
 
 import (
 	"bufio"
@@ -17,8 +17,8 @@ import (
 	"github.com/nomo42/url-shortener.git/cmd/logger"
 )
 
-// MaxFileDbSize is a max size of a file which will be load to the memory (200 MB default)
-const MaxFileDbSize = 1024 * 1024 * 200
+// MaxFileDBSize is a max size of a file which will be load to the memory (200 MB default)
+const MaxFileDBSize = 1024 * 1024 * 200
 
 type FileStorage struct {
 	file   *os.File
@@ -67,7 +67,7 @@ func Get(fName string) interfaces.Storage {
 		return &FileStorage{file: nil}
 	}
 
-	scanner := bufio.NewScanner(io.LimitReader(records, MaxFileDbSize))
+	scanner := bufio.NewScanner(io.LimitReader(records, MaxFileDBSize))
 	for scanner.Scan() {
 		url := scanner.Bytes()
 		var resultingURLObj Result
@@ -114,7 +114,6 @@ func (f *FileStorage) WriteValue(hash string, originalURL string) {
 		logger.Log.Error("fail to write new record: %s", zap.Any("error", err))
 	}
 
-	return
 }
 
 func (f *FileStorage) ReadValue(key string) (string, bool) {

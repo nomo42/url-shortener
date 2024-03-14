@@ -51,7 +51,9 @@ func createShortcutHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, cmd.ShortenURL(buf))))
+		urlHash := cmd.ShortenURL(buf)
+		_, err = w.Write([]byte(fmt.Sprintf("%s/%v", config.Config.ShortcutAddr, urlHash)))
+		storage.WriteValue(urlHash, string(buf))
 		if err != nil {
 			return
 		}
