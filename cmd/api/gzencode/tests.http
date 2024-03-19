@@ -16,7 +16,7 @@ Accept-Encoding: gzip
 #POST http://localhost:8080/api/shorten
 POST http://localhost:8080/
 #Content-Type: application/json
-Content-Type: application/json
-#Content-Encoding: gzip
+Content-Type: application/x-gzip
+Content-Encoding: gzip
 
 < testJsonGzip.gz
